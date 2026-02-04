@@ -1,0 +1,63 @@
+[project]
+name = "maws"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Nicolò Verardo", email = "n.verardo@outlook.com" }
+]
+requires-python = ">=3.11,<3.15"
+dependencies = [
+    "beautifulsoup4>=4.14.3",
+    "httpx>=0.28.1",
+    "lxml>=6.0.2",
+    "pydantic>=2.12.5",
+    "pydantic-settings>=2.12.0",
+    "typer>=0.21.1",
+]
+
+[project.scripts]
+maws = "cli.main:app"
+
+[build-system]
+requires = ["uv_build>=0.9.22,<0.10.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "prek>=0.3.1",
+    "ruff>=0.15.0",
+]
+
+[tool.ruff]
+target-version = "py311"
+
+[tool.ruff.lint]
+extend-select = [
+    "B",
+    "Q",
+    "I",
+    # "D",
+    "PL", # pylint
+]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.coverage.report]
+exclude_also = [
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+]
+
+[project.urls]
+homepage = "https://github.com/nicoloverardo/maws/"
+documentation = "https://github.com/nicoloverardo/maws/"
+repository = "https://github.com/nicoloverardo/maws/"
