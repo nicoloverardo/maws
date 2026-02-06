@@ -3,13 +3,16 @@
 Parser of the Asia Express website built on Magento.
 
 [![CI Pipeline](https://github.com/nicoloverardo/maws/actions/workflows/ci.yaml/badge.svg)](https://github.com/nicoloverardo/maws/actions/workflows/ci.yaml)
+![GitHub License](https://img.shields.io/github/license/nicoloverardo/maws)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 ## Description
 
-TODO
+`maws` is an asynchronous scraper and parser for the Asia Express website (built on Magento). It can download product listing pages while respecting configurable rate limits and optional login credentials, parse the downloaded HTML into structured `Product` models, and query product prices via the site's API.
+
+The library exposes a small async client (`MawsAsyncClient`) to perform the network operations and a parser to convert saved pages into JSON-ready Python objects.
 
 ## CLI
 
@@ -85,4 +88,47 @@ $ maws products parse [OPTIONS]
 
 ## Python usage
 
-TODO
+Below are simple examples showing common usages of `MawsAsyncClient`.
+
+Download product pages (uses the same client the CLI uses):
+
+```python
+from pathlib import Path
+import asyncio
+from maws import MawsAsyncClient
+
+client = MawsAsyncClient()
+asyncio.run(client.download_all_products(output=Path("output"), max_pages=10, skip=0))
+```
+
+Parse previously downloaded pages into `Product` objects and save to JSON:
+
+```python
+from pathlib import Path
+from maws import MawsAsyncClient
+
+client = MawsAsyncClient()
+products = client.parse_folder(Path("output"), output_json=Path("output/products.json"))
+print(f"Parsed {len(products)} products")
+```
+
+Request prices for a list of product ids (this is async and performs a login using credentials from the configured `Config`):
+
+> [!CAUTION]
+> Experimental!
+
+```python
+import asyncio
+import httpx
+from maws import MawsAsyncClient
+
+async def fetch_prices(pids):
+	client = MawsAsyncClient()
+	async with httpx.AsyncClient(timeout=client.config.urls.timeout) as http_client:
+		prices = await client.request_prices(http_client, pids=pids)
+		print(prices)
+
+asyncio.run(fetch_prices([12345, 67890]))
+```
+
+See the CLI in `src/cli/main.py` for how the client is used in practice.
