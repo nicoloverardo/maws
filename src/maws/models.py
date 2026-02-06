@@ -10,6 +10,11 @@ class Product(BaseModel):
     image_url: HttpUrl | None = None
     contents: str | None = None
 
+    price: str | None = None
+    tier_price: str | None = None
+    best_before: str | None = None
+    stock_status: str | None = None
+
     @field_validator("brand", mode="before")
     @classmethod
     def empty_brand_to_none(cls, v):
