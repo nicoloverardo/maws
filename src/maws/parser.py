@@ -50,10 +50,14 @@ class ProductHTMLParser(HTMLParser):
             self.product_div_depth = 1
             self.current_product = {
                 "product_id": int(attrs.get("data-product-id")),
+                # always present, even if missing in HTML
+                "price": None,
+                "tier_price": None,
+                "best_before": None,
+                "stock_status": None,
             }
             return
 
-        # Track nested divs correctly
         if self.in_product_div and tag == "div":
             self.product_div_depth += 1
 
@@ -80,6 +84,22 @@ class ProductHTMLParser(HTMLParser):
         elif tag == "div" and attrs.get("class") == "product-item-unit":
             self.capture_field = "contents"
 
+        # Price
+        elif tag == "span" and attrs.get("class") == "price initialized-price":
+            self.capture_field = "price"
+
+        # Tier / bulk price
+        elif tag == "span" and attrs.get("class") == "next-tier initialized-price":
+            self.capture_field = "tier_price"
+
+        # Best before
+        elif tag == "span" and attrs.get("class") == "best_before":
+            self.capture_field = "best_before"
+
+        # Stock status
+        elif tag == "div" and attrs.get("class", "").startswith("stock"):
+            self.capture_field = "stock_status"
+
     def handle_data(self, data):
         if self.capture_field:
             stripped = data.strip()
@@ -87,7 +107,6 @@ class ProductHTMLParser(HTMLParser):
                 self.text_buffer.append(stripped)
 
     def handle_endtag(self, tag):
-        # Finish capturing text fields
         if self.capture_field:
             value = " ".join(self.text_buffer).strip()
             if value:
@@ -95,7 +114,6 @@ class ProductHTMLParser(HTMLParser):
             self.text_buffer.clear()
             self.capture_field = None
 
-        # Correctly close product div
         if self.in_product_div and tag == "div":
             self.product_div_depth -= 1
             if self.product_div_depth == 0:
