@@ -28,7 +28,7 @@ class ProductHTMLParser(HTMLParser):
         self.capture_field: str | None = None
         self.text_buffer: list[str] = []
 
-    def handle_starttag(self, tag, attrs):
+    def handle_starttag(self, tag, attrs):  # noqa: PLR0912
         attrs = dict(attrs)
 
         # Find ol anywhere
