@@ -13,9 +13,10 @@ from maws.parser import ProductHTMLParser
 logger = logging.getLogger(__name__)
 
 
-class BaseClient:
+class MawsAsyncClient:
     def __init__(self, config: Config | None = None):
         self.config = config or Config()
+        self.rate_limiter = asyncio.Semaphore(1)
 
     def _parse_products_from_html(self, data: httpx.Response | str) -> list[Product]:
         html = data.text if isinstance(data, httpx.Response) else data
@@ -49,30 +50,6 @@ class BaseClient:
 
         return all_products
 
-
-class SyncClient(BaseClient):
-    def __init__(self, config: Config | None = None):
-        self.client = httpx.Client(follow_redirects=True)
-        super().__init__(config)
-
-    def fetch_first_product_page(self) -> httpx.Response:
-        resp = self.client.get(
-            self.config.urls.products_url,
-            headers=self.config.user_agents.get_random_ua_header(),
-        )
-        resp.raise_for_status()
-
-        return resp
-
-    def close(self):
-        self.client.close()
-
-
-class AsyncClient(BaseClient):
-    def __init__(self, config: Config | None = None):
-        self.rate_limiter = asyncio.Semaphore(1)
-        super().__init__(config)
-
     async def fetch(self, client: httpx.AsyncClient, url: str) -> httpx.Response:
         async with self.rate_limiter:
             response = await client.get(
@@ -82,14 +59,36 @@ class AsyncClient(BaseClient):
             await asyncio.sleep(self.config.urls.rate_limit_seconds)
             return response
 
-    async def download_all_pages(
-        self, output: str | Path = "output", max_pages: int | None = None
+    async def login(self, client: httpx.AsyncClient):
+        response = await client.post(
+            self.config.urls.login_url,
+            json={
+                "username": self.config.username,
+                "password": self.config.password.get_secret_value(),
+                "captcha_form_id": "user_login",
+                "context": "checkout",
+            },
+            follow_redirects=True,
+        )
+        response.raise_for_status()
+
+    async def download_all_products(
+        self, output: str | Path = "output", max_pages: int | None = None, skip: int = 0
     ) -> Path:
         Path(output).mkdir(exist_ok=True, parents=True)
 
         async with httpx.AsyncClient(timeout=self.config.urls.timeout) as client:
+            logger.info("Fetch website for the first time")
+            await self.fetch(client, self.config.urls.base_url.encoded_string())
+
+            if self.config.username is not None and self.config.password is not None:
+                logger.info("Logging in")
+                await self.login(client)
+            else:
+                logger.info("Missing credentials: skipping login.")
+
             # Fetch first page
-            logger.info("Fetching first page to determine total count…")
+            logger.info("Fetching first product page to determine total count…")
 
             first_html = await self.fetch(client, self.config.urls.products_url)
 
@@ -107,9 +106,10 @@ class AsyncClient(BaseClient):
                 max_pages,
             )
 
-            # Save first page
-            first_path = Path(output, "page_1.html")
-            first_path.write_text(first_html.text, encoding="utf-8")
+            # Skip saving the first page if requested
+            if skip == 0:
+                first_path = Path(output, "page_1.html")
+                first_path.write_text(first_html.text, encoding="utf-8")
 
             # URLs for remaining pages
             urls: list[tuple[int, str]] = [
@@ -117,7 +117,7 @@ class AsyncClient(BaseClient):
                     page,
                     f"{self.config.urls.products_url}&p={page}",
                 )
-                for page in range(2, total_pages + 1)
+                for page in range(2 + skip, total_pages + 1)
             ]
 
             async def wrapped_fetch(page_num: int, url: str):
@@ -136,3 +136,29 @@ class AsyncClient(BaseClient):
             logger.info("All %d pages saved to '%s'", total_pages, output)
 
         return Path(output)
+
+    async def request_prices(
+        self,
+        client: httpx.AsyncClient,
+        pids: list[int] | None = None,
+        products: list[Product] | None = None,
+    ) -> dict:
+        if pids is None and products is None:
+            raise ValueError("Please provide either `pids` or `products`.")
+
+        pids: list[int] = pids or [p.product_id for p in products]
+
+        headers = self.config.user_agents.get_random_ua_header()
+        headers.update({"Accept": "application/json"})
+
+        await self.login(client)
+
+        response = await client.get(
+            self.config.urls.prices_url,
+            headers=headers,
+            params={"pids": pids},
+            follow_redirects=True,
+        )
+        response.raise_for_status()
+
+        return response.json()
