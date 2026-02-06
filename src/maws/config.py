@@ -1,7 +1,8 @@
 import random
 from typing import Literal
 
-from pydantic import BaseModel, HttpUrl, computed_field
+from pydantic import BaseModel, HttpUrl, SecretStr, computed_field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Urls(BaseModel):
@@ -17,6 +18,10 @@ class Urls(BaseModel):
 
     products_path: str = "/assortiment.html"
 
+    login_path: str = "/customer/ajax/login/"
+
+    prices_path: str = "/price/fetch/priceandstock"
+
     @computed_field
     @property
     def products_url(self) -> str:
@@ -25,6 +30,25 @@ class Urls(BaseModel):
             host=self.base_url.host,
             query=f"{self.list_limit_str}={self.list_limit_value}",
             path=f"{self.base_lang}{self.products_path}",
+        ).encoded_string()
+
+    @computed_field
+    @property
+    def login_url(self) -> str:
+        return self.base_url.build(
+            scheme=self.base_url.scheme,
+            host=self.base_url.host,
+            path=f"{self.base_lang}{self.login_path}",
+        ).encoded_string()
+
+    @computed_field
+    @property
+    def prices_url(self) -> str:
+        return self.base_url.build(
+            scheme=self.base_url.scheme,
+            host=self.base_url.host,
+            query=f"{self.list_limit_str}={self.list_limit_value}",
+            path=f"{self.base_lang}{self.prices_path}",
         ).encoded_string()
 
 
@@ -51,6 +75,19 @@ class UserAgents(BaseModel):
         return {"User-Agent": self.get_random_ua()}
 
 
-class Config(BaseModel):
+class Config(BaseSettings):
+    model_config = SettingsConfigDict(
+        use_enum_values=True,
+        env_nested_delimiter="__",
+        env_prefix="MAWS_",
+        case_sensitive=False,
+        # To use the default value for a field rather than an
+        # empty value from the environment.
+        env_ignore_empty=True,
+    )
+
     urls: Urls = Urls()
     user_agents: UserAgents = UserAgents()
+
+    username: str | None = None
+    password: SecretStr | None = None
