@@ -228,10 +228,10 @@ class DetailedProductParser(HTMLParser):
             # Check if this TD should be skipped
             td_class = attrs.get("class", "")
             self.tier_cell_index += 1
-            # Skip hidden and icon cells (indices 0, 1)
+            # Skip action, hidden and icon cells (indices 0, 1)
             # Only capture cells 2, 3, 4 (quantity, price_per_piece, price_per_box)
             self._tier_price_current_cell_skip = (
-                "hidden" in td_class or "icon" in td_class
+                "hidden" in td_class or "icon" in td_class or "action" in td_class
             )
 
     def _start_specifications(self, tag: str, attrs: dict) -> None:
