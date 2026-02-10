@@ -15,6 +15,13 @@ class Product(BaseModel):
     best_before: str | None = None
     stock_status: str | None = None
 
+    # Detailed product information
+    categories: list[str] | None = None
+    description: str | None = None
+    stock_available: bool | None = None
+    price_tiers: list[dict] | None = None
+    specifications: dict | None = None
+
     @field_validator("brand", mode="before")
     @classmethod
     def empty_brand_to_none(cls, v):
