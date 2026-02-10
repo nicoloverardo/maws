@@ -136,29 +136,3 @@ class MawsAsyncClient:
             logger.info("All %d pages saved to '%s'", total_pages, output)
 
         return Path(output)
-
-    async def request_prices(
-        self,
-        client: httpx.AsyncClient,
-        pids: list[int] | None = None,
-        products: list[Product] | None = None,
-    ) -> dict:
-        if pids is None and products is None:
-            raise ValueError("Please provide either `pids` or `products`.")
-
-        pids: list[int] = pids or [p.product_id for p in products]
-
-        headers = self.config.user_agents.get_random_ua_header()
-        headers.update({"Accept": "application/json"})
-
-        await self.login(client)
-
-        response = await client.get(
-            self.config.urls.prices_url,
-            headers=headers,
-            params={"pids": pids},
-            follow_redirects=True,
-        )
-        response.raise_for_status()
-
-        return response.json()

@@ -112,23 +112,4 @@ products = client.parse_folder(Path("output"), output_json=Path("output/products
 print(f"Parsed {len(products)} products")
 ```
 
-Request prices for a list of product ids (this is async and performs a login using credentials from the configured `Config`):
-
-> [!CAUTION]
-> Experimental!
-
-```python
-import asyncio
-import httpx
-from maws import MawsAsyncClient
-
-async def fetch_prices(pids):
-	client = MawsAsyncClient()
-	async with httpx.AsyncClient(timeout=client.config.urls.timeout) as http_client:
-		prices = await client.request_prices(http_client, pids=pids)
-		print(prices)
-
-asyncio.run(fetch_prices([12345, 67890]))
-```
-
 See the CLI in `src/cli/main.py` for how the client is used in practice.
