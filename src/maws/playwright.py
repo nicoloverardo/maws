@@ -43,11 +43,19 @@ async def main(
         logger.info("Logged in successfully.")
         await page.get_by_role("menuitem", name="Assortiment arrow_drop_down").click()
         for product in products:
-            logger.info("Loading page of product %s", product.product_id)
-            await page.goto(product.product_url.encoded_string())
-            await page.wait_for_url(product.product_url.encoded_string(), timeout=60000)
-            logger.info("Loaded. Writing page content to file.")
-            Path(output, f"{product.product_id}.html").write_text(
-                await page.content(), encoding="utf-8"
-            )
+            try:
+                logger.info("Loading page of product %s", product.product_id)
+                await page.goto(product.product_url.encoded_string())
+                await page.wait_for_url(
+                    product.product_url.encoded_string(), timeout=60000
+                )
+                await page.wait_for_selector(
+                    "#tier-price-table tbody tr", timeout=60000
+                )
+                logger.info("Loaded. Writing page content to file.")
+                Path(output, f"{product.product_id}.html").write_text(
+                    await page.content(), encoding="utf-8"
+                )
+            except Exception as e:
+                logger.warning("Failed to load product %s: %s", product.product_id, e)
         await browser.close()
