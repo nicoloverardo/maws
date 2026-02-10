@@ -42,12 +42,12 @@ async def main(
         await page.get_by_role("button", name="Inloggen").click()
         logger.info("Logged in successfully.")
         await page.get_by_role("menuitem", name="Assortiment arrow_drop_down").click()
-        logger.info("Loading page")
-        product = products[2]
-        await page.goto(product.product_url.encoded_string())
-        await page.wait_for_url(product.product_url.encoded_string(), timeout=60000)
-        logger.info("Loaded. Writing page content to file.")
-        Path(output, f"{product.product_id}.html").write_text(
-            await page.content(), encoding="utf-8"
-        )
+        for product in products:
+            logger.info("Loading page of product %s", product.product_id)
+            await page.goto(product.product_url.encoded_string())
+            await page.wait_for_url(product.product_url.encoded_string(), timeout=60000)
+            logger.info("Loaded. Writing page content to file.")
+            Path(output, f"{product.product_id}.html").write_text(
+                await page.content(), encoding="utf-8"
+            )
         await browser.close()
