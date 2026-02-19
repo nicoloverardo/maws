@@ -5,10 +5,11 @@ from pathlib import Path
 
 import httpx
 from pydantic import TypeAdapter
+from rich.progress import track
 
 from maws.config import Config
 from maws.models import Product
-from maws.parser import ProductHTMLParser
+from maws.parser import DetailedProductParser, ProductHTMLParser
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +48,62 @@ class MawsAsyncClient:
             Path(output_json).write_bytes(
                 TypeAdapter(list[Product]).dump_json(all_products)
             )
+
+        return all_products
+
+    def _parse_detailed_product_from_html(self, data: httpx.Response | str) -> dict:
+        html = data.text if isinstance(data, httpx.Response) else data
+
+        parser = DetailedProductParser()
+        parser.feed(html)
+        return parser.get_product_data()
+
+    def parse_detailed_product_folder(
+        self,
+        folder: str | Path,
+        input_json: str | Path | None = None,
+        output_json: str | Path | None = None,
+    ) -> dict[str, dict] | list[Product]:
+        folder = Path(folder)
+        all_products: dict[str, dict] | list[Product] = {}
+
+        for file in track(
+            list(folder.glob("*.html")), description="Processing product pages…"
+        ):
+            logger.debug("Parsing products from '%s'…", file)
+            html = file.read_text(encoding="utf-8")
+            products = self._parse_detailed_product_from_html(html)
+            all_products[Path(file).name.replace(".html", "")] = products
+
+        if input_json is not None:
+            input_json = Path(input_json)
+            logger.info("Loading product data from '%s'…", input_json)
+            all_products_generic = TypeAdapter(list[Product]).validate_json(
+                input_json.read_text(encoding="utf-8")
+            )
+            for item in all_products_generic:
+                if str(item.product_id) not in all_products:
+                    continue
+                detailed_item = all_products[str(item.product_id)]
+                item.categories = detailed_item["categories"]
+                item.description = detailed_item["description"]
+                item.stock_available = detailed_item["stock_available"]
+                item.price_tiers = detailed_item["price_tiers"]
+                item.specifications = detailed_item["specifications"]
+            all_products = all_products_generic
+
+        logger.info("Total products parsed: %d", len(all_products))
+
+        if output_json is not None:
+            output_json = Path(output_json)
+            output_json.parent.mkdir(exist_ok=True, parents=True)
+            logger.info("Saving parsed products to '%s'…", output_json)
+            if isinstance(all_products, dict):
+                all_products = Path(output_json).write_bytes(all_products)
+            else:
+                Path(output_json).write_bytes(
+                    TypeAdapter(list[Product]).dump_json(all_products)
+                )
 
         return all_products
 
