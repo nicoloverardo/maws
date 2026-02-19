@@ -3,6 +3,7 @@ from pathlib import Path
 
 from playwright.async_api import async_playwright
 from pydantic import TypeAdapter
+from rich.progress import track
 
 from maws.config import Config
 from maws.models import Product
@@ -11,14 +12,28 @@ logger = logging.getLogger(__name__)
 
 
 async def main(
-    products: Path | list[Product], headless: bool = True, output: Path | None = None
+    products: Path | list[Product],
+    headless: bool = True,
+    output: Path | None = None,
+    timeout: int = 60000,
 ):
     """Run the Playwright scraper to fetch detailed product information.
 
     Examples:
         Open a python REPL with `uv run python -m asyncio` and then run:
 
-        >>> await main(Path("output/20260206_110617_products.json"))
+        >>> from pathlib import Path
+        >>> from uuid import uuid4
+        >>> from maws.playwright import main
+        >>> import logging
+        >>> from rich.logging import RichHandler
+        >>> logging.basicConfig(
+        ...     level=logging.INFO,
+        ...     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+        ...     handlers=[RichHandler()],
+        ... )
+        >>> output = Path("output", str(uuid4()))
+        >>> await main(Path("data/20260206_110617_products.json"), output=output)
     """
     if isinstance(products, Path):
         products = TypeAdapter(list[Product]).validate_json(
@@ -26,7 +41,7 @@ async def main(
         )
     if output is None:
         output = Path("output", "product_details")
-        output.mkdir(parents=True, exist_ok=True)
+    output.mkdir(parents=True, exist_ok=True)
     async with async_playwright() as playwright:
         config = Config()
         browser = await playwright.chromium.launch(headless=headless)
@@ -42,20 +57,36 @@ async def main(
         await page.get_by_role("button", name="Inloggen").click()
         logger.info("Logged in successfully.")
         await page.get_by_role("menuitem", name="Assortiment arrow_drop_down").click()
-        for product in products:
+        already_downloaded_ids = [
+            Path(item).name.replace(".html", "")
+            for item in Path(output).glob("*.html")
+            if Path(item).read_text() != ""
+        ]
+        to_download: list[Product] = [
+            p for p in products if str(p.product_id) not in already_downloaded_ids
+        ]
+        logger.info(
+            "Total products to download: %d (already downloaded: %d)",
+            len(to_download),
+            len(already_downloaded_ids),
+        )
+        skipped_ids = []
+        for product in track(to_download, description="Downloading products"):
             try:
-                logger.info("Loading page of product %s", product.product_id)
+                logger.debug("Loading page of product %s", product.product_id)
                 await page.goto(product.product_url.encoded_string())
                 await page.wait_for_url(
-                    product.product_url.encoded_string(), timeout=60000
+                    product.product_url.encoded_string(), timeout=timeout
                 )
                 await page.wait_for_selector(
-                    "#tier-price-table tbody tr", timeout=60000
+                    "#tier-price-table tbody tr", timeout=timeout
                 )
-                logger.info("Loaded. Writing page content to file.")
+                logger.debug("Loaded. Writing page content to file.")
                 Path(output, f"{product.product_id}.html").write_text(
                     await page.content(), encoding="utf-8"
                 )
             except Exception as e:
-                logger.warning("Failed to load product %s: %s", product.product_id, e)
+                logger.debug("Failed to load product %s: %s", product.product_id, e)
+                skipped_ids.append(product.product_id)
+        logger.info("Finished downloading products. Skipped products: %s", skipped_ids)
         await browser.close()
