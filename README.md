@@ -14,6 +14,15 @@ Parser of the Asia Express website built on Magento.
 
 The library exposes a small async client (`MawsAsyncClient`) to perform the network operations and a parser to convert saved pages into JSON-ready Python objects.
 
+## Usage
+
+Typical usage (via the CLI) would be that:
+
+1. You first retrieve the list of products via `maws products download-list`
+2. You then parse the folder where the HTMLs have been downloaded via `maws products parse` to create a JSON with the products overview info (e.g. ID, name)
+3. You then retrieve product details (e.g. price) for each product in the JSON via `maws products download-details`.
+4. Finally, you parse the folder with the HTML of the product pages to a more comprehensive JSON via `maws products parse --is-details`.
+
 ## CLI
 
 Magento Asia Website Scraper
