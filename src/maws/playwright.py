@@ -92,13 +92,18 @@ async def main(
                 )
 
                 await page.wait_for_selector(
-                    ".stock.out-of-stock", timeout=4000, state="visible"
+                    'div[title="Availability"]',
+                    timeout=min(5000, timeout),
+                    state="visible",
                 )
-                if await page.query_selector(".stock.out-of-stock"):
-                    logger.debug("Product %s is out of stock.", product.product_id)
-                else:
+                if await page.query_selector(".stock.available"):
                     await page.wait_for_selector(
                         "#tier-price-table tbody tr", timeout=timeout
+                    )
+                else:
+                    logger.debug(
+                        "Product %s is out of stock or not yet available. Skipping.",
+                        product.product_id,
                     )
                 logger.debug("Loaded. Writing page content to file.")
                 Path(output, f"{product.product_id}.html").write_text(
