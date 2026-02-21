@@ -14,14 +14,29 @@ Parser of the Asia Express website built on Magento.
 
 The library exposes a small async client (`MawsAsyncClient`) to perform the network operations and a parser to convert saved pages into JSON-ready Python objects.
 
+## Requirements
+
+- Python 3.10+
+- git
+
+You can get Python via `uv`. Follow the [official uv guide](https://docs.astral.sh/uv/getting-started/installation/) to install `uv`.
+
+## Setup
+
+1. Clone the repository.
+2. Once you have `uv` installed, you simply need to run `uv sync --all-groups --all-extras` to install Python, create a virtual env, and download all the Python dependencies.
+3. Install the required dependencies for playwright: `uv run playwright install chromium chromium-headless-shell --with-deps`.
+
 ## Usage
 
 Typical usage (via the CLI) would be that:
 
-1. You first retrieve the list of products via `maws products download-list`
-2. You then parse the folder where the HTMLs have been downloaded via `maws products parse` to create a JSON with the products overview info (e.g. ID, name)
-3. You then retrieve product details (e.g. price) for each product in the JSON via `maws products download-details`.
-4. Finally, you parse the folder with the HTML of the product pages to a more comprehensive JSON via `maws products parse --is-details`.
+1. Set in a `.env` file the `MAWS_USERNAME` and `MAWS_PASSWORD` variables to your credentials.
+2. Open a terminal and source the `.env` file: `set -o allexport && source .env && set +o allexport`.
+3. In the same terminal, you first retrieve the list of products via `maws products download-list` (or preprend `uv run` to all commands if running via `uv`).
+4. You then parse the folder where the HTMLs have been downloaded via `maws products parse` to create a JSON with the products overview info (e.g. ID, name)
+5. You then retrieve product details (e.g. price) for each product in the JSON via `maws products download-details`.
+6. Finally, you parse the folder with the HTML of the product pages to a more comprehensive JSON via `maws products parse --is-details`.
 
 ## CLI
 
