@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 
+import httpx
 from playwright.async_api import async_playwright
 from pydantic import TypeAdapter
 from rich.progress import track
@@ -47,7 +48,10 @@ async def main(
         browser = await playwright.chromium.launch(headless=headless)
         page = await browser.new_page()
         await page.goto(config.urls.base_url.encoded_string())
+        logging.info("Navigated to base URL: %s", config.urls.base_url.encoded_string())
+        logging.info("Username is %s", config.username)
         await page.get_by_role("link", name="Inloggen").click()
+        logging.info("Login form loaded. Filling in credentials.")
         await page.get_by_role("textbox", name="E-mail").click()
         await page.get_by_role("textbox", name="E-mail").fill(config.username)
         await page.get_by_role("textbox", name="Wachtwoord").click()
@@ -74,19 +78,34 @@ async def main(
         for product in track(to_download, description="Downloading products"):
             try:
                 logger.debug("Loading page of product %s", product.product_id)
-                await page.goto(product.product_url.encoded_string())
+                response = await page.goto(product.product_url.encoded_string())
+                if response and response.status == httpx.codes.NOT_FOUND:
+                    logger.debug(
+                        "Product %s not found (404). Skipping.", product.product_id
+                    )
+                    skipped_ids.append(
+                        {"id": product.product_id, "reason": "404 Not Found"}
+                    )
+                    continue
                 await page.wait_for_url(
                     product.product_url.encoded_string(), timeout=timeout
                 )
+
                 await page.wait_for_selector(
-                    "#tier-price-table tbody tr", timeout=timeout
+                    ".stock.out-of-stock", timeout=4000, state="visible"
                 )
+                if await page.query_selector(".stock.out-of-stock"):
+                    logger.debug("Product %s is out of stock.", product.product_id)
+                else:
+                    await page.wait_for_selector(
+                        "#tier-price-table tbody tr", timeout=timeout
+                    )
                 logger.debug("Loaded. Writing page content to file.")
                 Path(output, f"{product.product_id}.html").write_text(
                     await page.content(), encoding="utf-8"
                 )
             except Exception as e:
                 logger.debug("Failed to load product %s: %s", product.product_id, e)
-                skipped_ids.append(product.product_id)
+                skipped_ids.append({"id": product.product_id, "reason": str(e)})
         logger.info("Finished downloading products. Skipped products: %s", skipped_ids)
         await browser.close()
