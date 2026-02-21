@@ -1,7 +1,7 @@
 [project]
 name = "maws"
 version = "0.1.0"
-description = "Add your description here"
+description = "Parser of the Asia Express website built on Magento."
 readme = "README.md"
 authors = [
     { name = "Nicolò Verardo", email = "n.verardo@outlook.com" }
