@@ -10,6 +10,8 @@ class Product(BaseModel):
     image_url: HttpUrl | None = None
     contents: str | None = None
 
+    exists: bool = True
+
     price: str | None = None
     tier_price: str | None = None
     best_before: str | None = None

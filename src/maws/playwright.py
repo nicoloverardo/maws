@@ -86,6 +86,7 @@ async def main(
                     skipped_ids.append(
                         {"id": product.product_id, "reason": "404 Not Found"}
                     )
+                    product.exists = False
                     continue
                 await page.wait_for_url(
                     product.product_url.encoded_string(), timeout=timeout
@@ -113,4 +114,7 @@ async def main(
                 logger.debug("Failed to load product %s: %s", product.product_id, e)
                 skipped_ids.append({"id": product.product_id, "reason": str(e)})
         logger.info("Finished downloading products. Skipped products: %s", skipped_ids)
+        Path(output, "all_products_w_status.json").write_bytes(
+            TypeAdapter(list[Product]).dump_json(products)
+        )
         await browser.close()
