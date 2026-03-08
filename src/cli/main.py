@@ -4,6 +4,7 @@ import typer
 from rich.logging import RichHandler
 
 from .aof import aof
+from .goa import goa
 
 app = typer.Typer(no_args_is_help=True)
 
@@ -26,3 +27,4 @@ def callback():
 
 
 app.add_typer(aof, name="aof", help="Commands related to Asia Express Food.")
+app.add_typer(goa, name="goa", help="Commands related to Go Asia.")
