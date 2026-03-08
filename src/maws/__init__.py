@@ -1,3 +1,3 @@
-from maws.client import MawsAsyncClient
+from maws.aof.client import MawsAsyncClient
 
 __all__ = ["MawsAsyncClient"]

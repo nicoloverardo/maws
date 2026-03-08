@@ -27,6 +27,7 @@ build-backend = "uv_build"
 dev = [
     "prek>=0.3.1",
     "ruff>=0.15.0",
+    "ty>=0.0.21",
 ]
 
 [tool.ruff]
