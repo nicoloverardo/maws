@@ -7,9 +7,9 @@ import httpx
 from pydantic import TypeAdapter
 from rich.progress import track
 
-from maws.config import Config
+from maws.aof.config import Config
+from maws.aof.parser import DetailedProductParser, ProductHTMLParser
 from maws.models import Product
-from maws.parser import DetailedProductParser, ProductHTMLParser
 
 logger = logging.getLogger(__name__)
 

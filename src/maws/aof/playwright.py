@@ -6,7 +6,7 @@ from playwright.async_api import async_playwright
 from pydantic import TypeAdapter
 from rich.progress import track
 
-from maws.config import Config
+from maws.aof.config import Config
 from maws.models import Product
 
 logger = logging.getLogger(__name__)
@@ -53,10 +53,10 @@ async def main(
         await page.get_by_role("link", name="Inloggen").click()
         logging.info("Login form loaded. Filling in credentials.")
         await page.get_by_role("textbox", name="E-mail").click()
-        await page.get_by_role("textbox", name="E-mail").fill(config.username)
+        await page.get_by_role("textbox", name="E-mail").fill(config.username)  # ty:ignore[invalid-argument-type]
         await page.get_by_role("textbox", name="Wachtwoord").click()
         await page.get_by_role("textbox", name="Wachtwoord").fill(
-            config.password.get_secret_value()
+            config.password.get_secret_value()  # ty:ignore[unresolved-attribute]
         )
         await page.get_by_role("button", name="Inloggen").click()
         logger.info("Logged in successfully.")

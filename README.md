@@ -1,6 +1,6 @@
 # maws
 
-Parser of the Asia Express website built on Magento.
+Parser of the Asia Express website built on Magento and Go Asia.
 
 [![CI Pipeline](https://github.com/nicoloverardo/maws/actions/workflows/ci.yaml/badge.svg)](https://github.com/nicoloverardo/maws/actions/workflows/ci.yaml)
 ![GitHub License](https://img.shields.io/github/license/nicoloverardo/maws)
@@ -13,6 +13,8 @@ Parser of the Asia Express website built on Magento.
 `maws` is an asynchronous scraper and parser for the Asia Express website (built on Magento). It can download product listing pages while respecting configurable rate limits and optional login credentials, parse the downloaded HTML into structured `Product` models, and query product prices via the site's API.
 
 The library exposes a small async client (`MawsAsyncClient`) to perform the network operations and a parser to convert saved pages into JSON-ready Python objects.
+
+Moreover, it can also parse the GoAsia website.
 
 ## Requirements
 
@@ -29,6 +31,8 @@ You can get Python via `uv`. Follow the [official uv guide](https://docs.astral.
 
 ## Usage
 
+### Asia Express
+
 Typical usage (via the CLI) would be that:
 
 1. Set in a `.env` file the `MAWS_USERNAME` and `MAWS_PASSWORD` variables to your credentials.
@@ -37,6 +41,11 @@ Typical usage (via the CLI) would be that:
 4. You then parse the folder where the HTMLs have been downloaded via `maws products parse` to create a JSON with the products overview info (e.g. ID, name)
 5. You then retrieve product details (e.g. price) for each product in the JSON via `maws products download-details`.
 6. Finally, you parse the folder with the HTML of the product pages to a more comprehensive JSON via `maws products parse --is-details`.
+
+### Go Asia
+
+> [!NOTE]
+> TODO
 
 ## CLI
 
@@ -56,16 +65,34 @@ $ maws [OPTIONS] COMMAND [ARGS]...
 
 **Commands**:
 
+* `aof`: Commands related to Asia Express Food.
+
+### `maws aof`
+
+Commands related to Asia Express Food.
+
+**Usage**:
+
+```console
+$ maws aof [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
 * `products`: Commands related to Products.
 
-### `maws products`
+#### `maws aof products`
 
 Commands related to Products.
 
 **Usage**:
 
 ```console
-$ maws products [OPTIONS] COMMAND [ARGS]...
+$ maws aof products [OPTIONS] COMMAND [ARGS]...
 ```
 
 **Options**:
@@ -78,14 +105,14 @@ $ maws products [OPTIONS] COMMAND [ARGS]...
 * `download-details`: Download Products details page.
 * `parse`: Parse a folder containing HTML downloaded...
 
-#### `maws products download-list`
+##### `maws aof products download-list`
 
 Download pages.
 
 **Usage**:
 
 ```console
-$ maws products download-list [OPTIONS]
+$ maws aof products download-list [OPTIONS]
 ```
 
 **Options**:
@@ -95,14 +122,14 @@ $ maws products download-list [OPTIONS]
 * `--skip INTEGER RANGE`: How many pages to skip.  [default: 0; x&gt;=0]
 * `--help`: Show this message and exit.
 
-#### `maws products download-details`
+##### `maws aof products download-details`
 
 Download Products details page.
 
 **Usage**:
 
 ```console
-$ maws products download-details [OPTIONS]
+$ maws aof products download-details [OPTIONS]
 ```
 
 **Options**:
@@ -112,14 +139,14 @@ $ maws products download-details [OPTIONS]
 * `--timeout INTEGER RANGE`: Timeout for loading each product page, in milliseconds.  [default: 30000; x&gt;=1]
 * `--help`: Show this message and exit.
 
-#### `maws products parse`
+##### `maws aof products parse`
 
 Parse a folder containing HTML downloaded pages and save them to JSON.
 
 **Usage**:
 
 ```console
-$ maws products parse [OPTIONS]
+$ maws aof products parse [OPTIONS]
 ```
 
 **Options**:
@@ -131,6 +158,8 @@ $ maws products parse [OPTIONS]
 * `--help`: Show this message and exit.
 
 ## Python usage
+
+### Asia Express
 
 Below are simple examples showing common usages of `MawsAsyncClient`.
 
@@ -157,3 +186,8 @@ print(f"Parsed {len(products)} products")
 ```
 
 See the CLI in `src/cli/main.py` for how the client is used in practice.
+
+### Go Asia
+
+> [!NOTE]
+> TODO
