@@ -28,13 +28,13 @@ Usage — library
 Usage — CLI
 -----------
     # Single product, print to stdout
-    uv run asia4friends_product.py frische-vietnamesische-melisse-aus-asien-100g
+    uv run a4f_details.py frische-vietnamesische-melisse-aus-asien-100g
 
     # Batch from JSON file, save each result to ./out/
-    uv run asia4friends_product.py products.json --output out/
+    uv run a4f_details.py products.json --output out/
 
     # With optional flags
-    uv run asia4friends_product.py products.json --output out/ --variants --concurrency 10
+    uv run a4f_details.py products.json --output out/ --variants --concurrency 10
 """
 
 from __future__ import annotations

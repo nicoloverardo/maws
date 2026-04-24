@@ -42,10 +42,11 @@ Typical usage (via the CLI) would be that:
 5. You then retrieve product details (e.g. price) for each product in the JSON via `maws products download-details`.
 6. Finally, you parse the folder with the HTML of the product pages to a more comprehensive JSON via `maws products parse --is-details`.
 
-### Go Asia
+### Asia 4 Friends
 
-> [!NOTE]
-> TODO
+1. First download all products via the CLI using `uv run maws a4f download --output out_folder`. Will create a `products.json` in the output folder.
+2. Then download all the details with `uv run src/cli/a4f_details.py output/products.json --output output/details --concurrency 10`.
+3. Finally, merge all data into a single JSON with `uv run src/cli/a4f_merger.py --source-json output/products.json --scraped-dir output/details/ --output-file asia4friends_with_details.json`
 
 ## CLI
 
