@@ -1,6 +1,6 @@
 [project]
 name = "maws"
-version = "0.1.0"
+version = "0.2.0"
 description = "Parser of the Asia Express website built on Magento."
 readme = "README.md"
 authors = [
